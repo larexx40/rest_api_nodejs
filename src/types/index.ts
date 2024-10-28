@@ -4,3 +4,8 @@ export interface Recipe{
     instructions: string;
     imageUrl?: string;
 }
+export interface User{
+    name: string;
+    email: string;
+    age: number;
+}
