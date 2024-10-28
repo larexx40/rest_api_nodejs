@@ -4,12 +4,12 @@
   "description": "web application that allows users to manage a collection of recipes. Users should be able to create, view, update, and delete recipes.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts,json,md}'",
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "nodemon",
+    "test": "jest --watchAll  --detectOpenHandles"
   },
   "repository": {
     "type": "git",
@@ -34,16 +34,22 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
     "@types/mongoose": "^5.11.97",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.8.1",
+    "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
     "prettier": "^3.3.3",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
   }
