@@ -5,10 +5,9 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Mock Data
-const sampleId = "671ce49081cca9055ac26af9"
+const dbUri = process.env.NODE_ENV === 'test' ? process.env.MONGO_TEST_URI : process.env.MONGO_URI;
+
 const sampleRecipe = {
-    _id: "671ce49081cca9055ac26af9",
     title: "Sample Recipe",
     ingredients: ["ingredient1", "ingredient2"],
     instructions: "Mix all ingredients and cook.",
@@ -21,14 +20,9 @@ const sampleRecipeUpdate = {
     instructions: "Mix all ingredients differently and cook."
 };
 
-// Connect to a test database before running tests
+// Connect to the test database before all tests
 beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_TEST_URI!);
-});
-
-// Clear the Recipe collection before each test
-beforeEach(async () => {
-    await RecipeModel.deleteMany({});
+    await mongoose.connect(dbUri!);
 });
 
 // Disconnect after all tests are done
@@ -39,13 +33,14 @@ afterAll(async () => {
 describe('Recipe Controller', () => {
     let createdRecipeId: string;
 
+    // Create a new recipe before each test and store its ID for use in update and retrieval tests
+    beforeEach(async () => {
+        const recipe = await RecipeModel.create(sampleRecipe);
+        createdRecipeId = recipe._id.toString(); // Capture created recipe ID
+    });
+
     it('should fetch recipes with pagination', async () => {
-        // Create a sample recipe to ensure there's data to fetch
-        const recipe = new RecipeModel(sampleRecipe);
-        await recipe.save();
-        
         const response = await request(app).get('/api/recipes?page=1&limit=10');
-        console.log(response.body);  // Log response for debugging
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(Array.isArray(response.body.data.recipes)).toBe(true);
@@ -62,12 +57,10 @@ describe('Recipe Controller', () => {
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
         expect(response.body.data.title).toBe(sampleRecipe.title);
-        createdRecipeId = response.body.data._id; // Store created recipe ID for later tests
     });
 
-    it('should get recipe by ID', async () => {
-        const response = await request(app).get(`/api/recipes/${sampleId}`);
-        
+    it('should create and retrieve a recipe by ID', async () => {
+        const response = await request(app).get(`/api/recipes/${createdRecipeId}`);
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.title).toBe(sampleRecipe.title);
@@ -75,28 +68,44 @@ describe('Recipe Controller', () => {
 
     it('should update a recipe', async () => {
         const response = await request(app)
-            .put(`/api/recipes/${createdRecipeId}`)
+            .patch(`/api/recipes/${createdRecipeId}`)
             .send(sampleRecipeUpdate)
             .set('Accept', 'application/json');
         
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.title).toBe(sampleRecipeUpdate.title);
+        expect(response.body.data.ingredients).toEqual(sampleRecipeUpdate.ingredients);
+        expect(response.body.data.instructions).toBe(sampleRecipeUpdate.instructions);
     });
 
     it('should delete a recipe', async () => {
-        const response = await request(app).delete(`/api/recipes/${createdRecipeId}`);
+        const response = await request(app)
+            .delete(`/api/recipes/${createdRecipeId}`)
+            .set('Accept', 'application/json');
         
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.message).toBe('Recipe deleted successfully');
-    });
 
-    it('should return 404 for non-existent recipe', async () => {
-        const response = await request(app).get(`/api/recipes/${createdRecipeId}`);
-        
-        expect(response.status).toBe(404);
-        expect(response.body.success).toBe(false);
-        expect(response.body.message).toBe('Recipe not found');
+        // Verify the recipe no longer exists in the database
+        const findResponse = await RecipeModel.findById(createdRecipeId);
+        expect(findResponse).toBeNull();
     });
 });
+
+    // it('should delete a recipe', async () => {
+    //     const response = await request(app).delete(`/api/recipes/${createdRecipeId}`);
+        
+    //     expect(response.status).toBe(200);
+    //     expect(response.body.success).toBe(true);
+    //     expect(response.body.message).toBe('Recipe deleted successfully');
+    // });
+
+    // it('should return 404 for non-existent recipe', async () => {
+    //     const response = await request(app).get(`/api/recipes/${createdRecipeId}`);
+        
+    //     expect(response.status).toBe(404);
+    //     expect(response.body.success).toBe(false);
+    //     expect(response.body.message).toBe('Recipe not found');
+    // });

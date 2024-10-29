@@ -3,9 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Choose the appropriate database URI based on the environment
+const dbUri = process.env.NODE_ENV === 'test' ? process.env.MONGO_TEST_URI : process.env.MONGO_URI;
+console.log("DB: ", dbUri);
+
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI!);
+    await mongoose.connect(dbUri!);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('Error connecting to MongoDB', error);
